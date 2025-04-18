@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seat Booking</title>
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+        body {
+            background: linear-gradient(to right, #141e30, #243b55);
+            color: white;
+            text-align: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+        .container {
+            width: 100%;
+            margin: auto;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+        }
+        .section {
+            margin-top: 20px;
+        }
+        .seat-layout {
+            display: grid;
+            gap: 5px;
+            justify-content: center;
+        }
+        .seat {
+            width: 30px;
+            height: 30px;
+            background: gray;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .seat.selected {
+            background: green;
+        }
+        .seat.booked {
+            background: red;
+            cursor: not-allowed;
+        }
+        .confirm-btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: #e50914;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: 0.3s;
+        }
+        .confirm-btn:hover {
+            background: #b20710;
+        }
+        #total-price {
+            margin-top: 15px;
+            font-size: 18px;
+        }
+        #confirmation-message {
+            margin-top: 15px;
+            font-size: 20px;
+            font-weight: bold;
+            color: #00ff00;
+            display: none;
+        }
+        #ticket {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            background: white;
+            color: black;
+            text-align: left;
+            display: none;
+        }
+        .pay-btn {
+            margin-top: 20px;
+            padding: 12px 25px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: 0.3s;
+        }
+        .pay-btn:hover {
+            background: #218838;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Book Your Seat</h2>
+        
+        <div class="section">
+            <h3>VIP (Rs. 500)</h3>
+            <div class="seat-layout" id="vipSeats" style="grid-template-columns: repeat(10, 1fr);"></div>
+        </div>
+        
+        <div class="section">
+            <h3>Premium (Rs. 240)</h3>
+            <div class="seat-layout" id="premiumSeats" style="grid-template-columns: repeat(3, 1fr);"></div>
+        </div>
+        
+        <div class="section">
+            <h3>Executive (Rs. 220)</h3>
+            <div class="seat-layout" id="executiveSeats" style="grid-template-columns: repeat(3, 1fr);"></div>
+        </div>
+        
+        <div class="section">
+            <h3>Normal (Rs. 200)</h3>
+            <div class="seat-layout" id="normalSeats" style="grid-template-columns: repeat(3, 1fr);"></div>
+        </div>
+
+        <div id="total-price">Total Price: Rs. 0</div>
+        
+        <button class="confirm-btn" onclick="confirmBooking()">Confirm Booking</button>
+        
+        <div id="confirmation-message">Booking is Confirmed!</div>
+
+        <!-- Ticket Display -->
+        <div id="ticket">
+            <h3>🎟 Your Ticket 🎟</h3>
+            <p><strong>Seats:</strong> <span id="selected-seats"></span></p>
+            <p><strong>Total Amount:</strong> Rs. <span id="final-price"></span></p>
+        </div>
+
+        <!-- Pay Button -->
+        <button class="pay-btn" id="payButton" onclick="processPayment()" style="display:none;">Pay Now</button>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            generateSeats("vipSeats", [2,3,2,2,2,2,2,2,3,2], "VIP", 500);
+            generateSeats("premiumSeats", [10,10,10,10,10,10], "Premium", 240);
+            generateSeats("executiveSeats", [10,10,10,10,10,10], "Executive", 220);
+            generateSeats("normalSeats", [12,12,12], "Normal", 200);
+        });
+
+        let totalPrice = 0;
+        let selectedSeatDetails = [];
+
+        function generateSeats(containerId, rowArray, category, price) {
+            const container = document.getElementById(containerId);
+            let seatNumber = 1;
+
+            rowArray.forEach(seatCount => {
+                const row = document.createElement("div");
+                row.style.display = "flex";
+                row.style.justifyContent = "center";
+                row.style.gap = "5px";
+                for (let i = 0; i < seatCount; i++) {
+                    const seat = document.createElement("div");
+                    seat.classList.add("seat");
+                    seat.dataset.price = price;
+                    seat.dataset.category = category;
+                    seat.dataset.seatNumber = `${category} ${seatNumber}`;
+                    seatNumber++;
+                    
+                    seat.addEventListener("click", function() {
+                        if (!seat.classList.contains("booked")) {
+                            if (seat.classList.contains("selected")) {
+                                seat.classList.remove("selected");
+                                totalPrice -= price;
+                                selectedSeatDetails = selectedSeatDetails.filter(s => s !== seat.dataset.seatNumber);
+                            } else {
+                                seat.classList.add("selected");
+                                totalPrice += price;
+                                selectedSeatDetails.push(seat.dataset.seatNumber);
+                            }
+                            updateTotalPrice();
+                        }
+                    });
+                    row.appendChild(seat);
+                }
+                container.appendChild(row);
+            });
+        }
+
+        function updateTotalPrice() {
+            document.getElementById("total-price").textContent = `Total Price: Rs. ${totalPrice}`;
+        }
+
+        function confirmBooking() {
+            const selectedSeats = document.querySelectorAll(".seat.selected");
+            if (selectedSeats.length === 0) {
+                alert("Please select at least one seat before confirming.");
+                return;
+            }
+
+            selectedSeats.forEach(seat => {
+                seat.classList.remove("selected");
+                seat.classList.add("booked");
+            });
+
+            // Show confirmation message
+            document.getElementById("confirmation-message").style.display = "block";
+
+            // Show ticket details
+            document.getElementById("selected-seats").textContent = selectedSeatDetails.join(", ");
+            document.getElementById("final-price").textContent = totalPrice;
+            document.getElementById("ticket").style.display = "block";
+
+            // Show the Pay Now button
+            document.getElementById("payButton").style.display = "inline-block";
+
+            // Reset values after booking
+            totalPrice = 0;
+            selectedSeatDetails = [];
+            updateTotalPrice();
+        }
+
+        function processPayment() {
+            // Simulate a payment process`
+            // 
+            //            alert("Payment Successful! Thank you for your booking.");
+            // Reset the booking and hide the pay button
+            document.getElementById("payButton").style.display = "none";
+            document.getElementById("ticket").style.display = "none";
+            document.getElementById("confirmation-message").style.display = "none";
+        }
+    </script>
+</body>
+</html>
